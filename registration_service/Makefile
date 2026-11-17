@@ -1,5 +1,5 @@
 PYTHON ?= ../.venv/bin/python
-MYSQL ?= mysql -h 127.0.0.1 -u root
+MYSQL ?= mysql -h 127.0.0.1 -u assignment2 -p1234
 
 gen:
 	mkdir -p generated
