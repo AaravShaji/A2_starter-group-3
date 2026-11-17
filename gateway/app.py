@@ -41,6 +41,9 @@ def http_error(error):
 
 @app.get("/api/v1/events")
 def list_events():
+    response = events.ListEvents(event_pb2.ListEventsRequest())
+    eventList = [fields(event) for event in response.events]
+    return jsonify(eventList), 200
     abort(501, "TODO task 1: implement GET /api/v1/events")
 
 
