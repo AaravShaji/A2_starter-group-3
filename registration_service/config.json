@@ -2,7 +2,7 @@
   "listen": "127.0.0.1:8082",
   "event_service": "127.0.0.1:8081",
   "db": {
-    "host": "127.0.0.1",
+    "host": "142.109.127.40",
     "port": 3306,
     "user": "assignment2",
     "password": "1234",
