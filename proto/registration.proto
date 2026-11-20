@@ -2,9 +2,18 @@ syntax = "proto3";
 
 package campus.registrations.v1;
 
-service RegistrationService {
+service RegistrationService 
+{
   rpc CancelBooking(BookingId) returns (Empty);
+  // Task 3 rpc calls, one for creating and one for getting.
+  rpc CreateParticipant(CreateParticipantRequest) returns (Participant);
+  rpc GetParticipant(ParticipantId) returns (Participant);
 }
 
 message BookingId { int64 booking_id = 1; }
 message Empty {}
+
+// Task 3 messages, for the new rpc's above.
+message ParticipantId { int64 participant_id = 1; }
+message CreateParticipantRequest { string name = 1; }
+message Participant { int 64 participant_id = 1; string name = 2; }
