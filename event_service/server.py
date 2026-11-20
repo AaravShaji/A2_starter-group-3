@@ -1,6 +1,7 @@
 import json
 from concurrent import futures
 
+from flask import request
 import grpc
 import mysql.connector
 import event_pb2 as pb
@@ -34,6 +35,15 @@ class EventService(rpc.EventServiceServicer):
         self.GetEvent(request, context)
         write("UPDATE events SET seats_taken = seats_taken - 1 WHERE event_id = %s", (request.event_id,))
         return pb.Empty()
+
+    def ListEvents(self, request, context):
+        found = read("""SELECT event_id, name, capacity, capacity - seats_taken AS available_seats
+                        FROM events WHERE name LIKE %s
+                        ORDER BY event_id ASC""", (f"%{request.name}%",))
+
+        return pb.ListEventsResponse(
+            events=[pb.Event(**row) for row in found]
+        )
 
 
 server = grpc.server(futures.ThreadPoolExecutor(max_workers=8))
