@@ -4,7 +4,7 @@
     "host": "127.0.0.1",
     "port": 3306,
     "user": "assignment2",
-    "password": "1234",
+    "password": "",
     "database": "event_db"
   }
 }
