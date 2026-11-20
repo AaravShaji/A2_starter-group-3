@@ -57,7 +57,7 @@ class RegistrationService(rpc.RegistrationServiceServicer):
         if not name:
             context.abort(grpc.StatusCode.INVALID_ARGUMENT, "Participant name cannot be blank")
         participant_id = write("INSERT INTO participants (name) VALUES (%s)", (name,))
-        return self.GetParticipant(pb.ParticipantID(participant_id = participant_id), context)
+        return self.GetParticipant(pb.ParticipantId(participant_id = participant_id), context)
     
 
 
