@@ -16,4 +16,4 @@ message Empty {}
 // Task 3 messages, for the new rpc's above.
 message ParticipantId { int64 participant_id = 1; }
 message CreateParticipantRequest { string name = 1; }
-message Participant { int 64 participant_id = 1; string name = 2; }
+message Participant { int64 participant_id = 1; string name = 2; }
