@@ -44,6 +44,22 @@ class RegistrationService(rpc.RegistrationServiceServicer):
             call(self.events.ReleaseSeat, event_pb2.EventId(event_id=found[0]["event_id"]), context)
         return pb.Empty()
 
+    # Task 3 implementation server side, Get implementation
+    def GetParticipant(self, request, context):
+        found = read("SELECT participant_id, name FROM participants WHERE participant_id = %s", (request.participant_id,),)
+        if not found:
+            context.abort(grpc.StatusCode.NOT_FOUND, "Participant not found")
+        return pb.Participant(**found [0])
+
+    # Task 3 implementation server side, Create participant
+    def CreateParticipant(self, request, context):
+        name = request.name.strip()
+        if not name:
+            context.abort(grpc.StatusCode.INVALID_ARGUMENT, "Participant name cannot be blank")
+        participant_id = write("INSERT INTO participants (name) VALUES (%s)", (name,))
+        return self.GetParticipant(pb.ParticipantId(participant_id = participant_id), context)
+    
+
 
 events = event_pb2_grpc.EventServiceStub(grpc.insecure_channel(CONFIG["event_service"]))
 server = grpc.server(futures.ThreadPoolExecutor(max_workers=8))
