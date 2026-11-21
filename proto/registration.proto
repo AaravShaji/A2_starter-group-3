@@ -8,6 +8,9 @@ service RegistrationService
   // Task 3 rpc calls, one for creating and one for getting.
   rpc CreateParticipant(CreateParticipantRequest) returns (Participant);
   rpc GetParticipant(ParticipantId) returns (Participant);
+  // Task 4 rpc calls, booking a seat and listing an event's bookings.
+  rpc CreateBooking(CreateBookingRequest) Returns (Booking);
+  rpc ListBookings(ListBookingsRequest) returns (ListBookingsResponse);
 }
 
 message BookingId { int64 booking_id = 1; }
@@ -17,3 +20,14 @@ message Empty {}
 message ParticipantId { int64 participant_id = 1; }
 message CreateParticipantRequest { string name = 1; }
 message Participant { int64 participant_id = 1; string name = 2; }
+
+// Task 4 messages
+message CreateBookingRequest { int64 event_id = 1; int64 participant_id = 2; }
+message Booking {
+  int64 booking_id = 1;
+  int64 event_id = 2;
+  int64 participant_id = 3;
+  int64 participant_name = 4;
+}
+message ListBookingsRequest { int64 event_id = 1; }
+message ListBookingsResponse { repeated Booking bookings = 1; }
