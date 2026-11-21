@@ -22,6 +22,11 @@ def write(sql, args=()):
         db.commit()
         return cursor.lastrowid
 
+def update(sql, args=()):
+    with mysql.connector.connect(**CONFIG["db"]) as db, db.cursor() as cursor:
+        cursor.execute(sql, args)
+        db.commit()
+        return cursor.rowcount
 
 class EventService(rpc.EventServiceServicer):
     def GetEvent(self, request, context):
@@ -35,6 +40,14 @@ class EventService(rpc.EventServiceServicer):
         self.GetEvent(request, context)
         write("UPDATE events SET seats_taken = seats_taken - 1 WHERE event_id = %s", (request.event_id,))
         return pb.Empty()
+    
+    def ReserveSeat(self, request, context):
+        self.GetEvent(request, context)
+        taken = update ("""UPDATE events SET seats_taken = seats_taken + 1
+                            WHERE event_id = %s AND seats_taken < capacity""", (request.event_id,))
+        if taken == 0:
+            context.abort(grpc.StatusCode.RESOURCE_EXHAUSTED, "Event is full")
+        return pb.Empty()                        
 
     def ListEvents(self, request, context):
         found = read("""SELECT event_id, name, capacity, capacity - seats_taken AS available_seats
