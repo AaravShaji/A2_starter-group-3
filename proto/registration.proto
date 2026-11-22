@@ -9,7 +9,7 @@ service RegistrationService
   rpc CreateParticipant(CreateParticipantRequest) returns (Participant);
   rpc GetParticipant(ParticipantId) returns (Participant);
   // Task 4 rpc calls, booking a seat and listing an event's bookings.
-  rpc CreateBooking(CreateBookingRequest) Returns (Booking);
+  rpc CreateBooking(CreateBookingRequest) returns (Booking);
   rpc ListBookings(ListBookingsRequest) returns (ListBookingsResponse);
 }
 
