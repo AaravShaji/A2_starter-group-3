@@ -38,6 +38,25 @@ def rpc_error(error):
 def http_error(error):
     return jsonify(error=error.description), error.code
 
+@app.before_request
+def require_staff():
+
+    # Only the add_event, edit_event, and delete_event endpoints require authentication.
+    protected = ("add_event", "edit_event", "delete_event")
+
+    # Checking that the requested endpoint requires authentication.
+    if request.endpoint in protected:
+        
+        # Retrieve the token from the Authorization header.
+        token = request.headers.get("Authorization")
+
+        # Retrieve the expected staff token from the configuration.
+        expected = "Bearer " + CONFIG["staff_token"]
+
+        # Reject requests with missing or incorrect tokens.
+        if token != expected:
+            abort(401, "Unauthorized")
+
 
 @app.get("/api/v1/events")
 def list_events():
@@ -54,17 +73,113 @@ def get_event(event_id):
 
 @app.post("/api/v1/events")
 def add_event():
-    abort(501, "TODO task 2: implement POST /api/v1/events")
+    body = request.get_json(silent=True)
+
+    # Reject requests that do not contain a JSON object.
+    if not isinstance(body, dict):
+        abort(400, "Request body must be a valid JSON object")
+
+    # Checking that the required fields are present.
+    if "name" not in body or "capacity" not in body:
+        abort(400, "Name and capacity are required")
+
+    # Checking for supported fields
+    if set(body) != {"name", "capacity"}:
+        abort(400, "Only name and capacity are allowed")
+
+    # Checking that the name is a string.
+    if not isinstance(body["name"], str):
+        abort(400, "Name must be a string")
+
+    # Checking that capacity is an integer.
+    if type(body["capacity"]) is not int:
+        abort(400, "Capacity must be an integer")
+
+    # Making sure capacity is not negative.
+    if body["capacity"] < 0:
+        abort(400, "Capacity cannot be negative")
+
+    # Rejecting capacities larger than the protobuf int32 limit.
+    if body["capacity"] > 2147483647:
+        abort(400, "Capacity is too large")
+
+    # Creating a protobuf request containing the event information.
+    event_request = event_pb2.CreateEventRequest(
+        name=body["name"],
+        capacity=body["capacity"]
+    )
+
+    event = events.CreateEvent(event_request)
+
+    return jsonify(fields(event)), 201
+
 
 
 @app.patch("/api/v1/events/<int:event_id>")
 def edit_event(event_id):
-    abort(501, "TODO task 2: implement PATCH /api/v1/events/<event_id>")
+
+    body = request.get_json(silent=True)
+
+    # Making sure the request body is a JSON object
+    if not isinstance(body, dict):
+        abort(400, "Request body must be a valid JSON object")
+
+    # Making sure that the request body is not empty
+    if not body:
+        abort(400, "At least one field is required")
+
+    # Rejecting fields other than name and capacity
+    if not set(body).issubset({"name", "capacity"}):
+        abort(400, "Only name and capacity can be updated")
+
+    # Validating the name when provided
+    if "name" in body:
+        if not isinstance(body["name"], str):
+            abort(400, "Name must be a string")
+
+    # Validating the capacity when provided
+    if "capacity" in body:
+        if type(body["capacity"]) is not int:
+            abort(400, "Capacity must be an integer")
+
+        # Rejecting negative capacities.
+        if body["capacity"] < 0:
+            abort(400, "Capacity cannot be negative")
+
+        # Rejecting capacities outside the protobuf int32 range.
+        if body["capacity"] > 2147483647:
+            abort(400, "Capacity is too large")
+
+    # Creating a protobuf request containing the event ID.
+    event_request = event_pb2.UpdateEventRequest(
+        event_id=event_id
+    )
+
+    # Including the name only if it was provided.
+    if "name" in body:
+        event_request.name = body["name"]
+
+    # Including the capacity only if it was provided.
+    if "capacity" in body:
+        event_request.capacity = body["capacity"]
+
+    # Call the UpdateEvent method in the Event Service.
+    event = events.UpdateEvent(event_request)
+
+    # Return the updated event with HTTP status 200.
+    return jsonify(fields(event)), 200
+
 
 
 @app.delete("/api/v1/events/<int:event_id>")
 def delete_event(event_id):
-    abort(501, "TODO task 2: implement DELETE /api/v1/events/<event_id>")
+    # Creating a protobuf request containing the event ID.
+    event_request = event_pb2.EventId(event_id=event_id)
+
+    # Calling the DeleteEvent method in the Event Service
+    events.DeleteEvent(event_request)
+
+    return "", 204
 
 
 @app.post("/api/v1/participants")
