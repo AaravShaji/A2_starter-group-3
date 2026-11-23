@@ -22,11 +22,14 @@ STATUS = {
 app = Flask(__name__)
 events = event_pb2_grpc.EventServiceStub(grpc.insecure_channel(CONFIG["event_service"]))
 registrations = registration_pb2_grpc.RegistrationServiceStub(
-    grpc.insecure_channel(CONFIG["registration_service"]))
+    grpc.insecure_channel(CONFIG["registration_service"])
+)
 
 
 def fields(message):
-    return {field.name: getattr(message, field.name) for field in message.DESCRIPTOR.fields}
+    return {
+        field.name: getattr(message, field.name) for field in message.DESCRIPTOR.fields
+    }
 
 
 @app.errorhandler(grpc.RpcError)
@@ -38,6 +41,7 @@ def rpc_error(error):
 def http_error(error):
     return jsonify(error=error.description), error.code
 
+
 @app.before_request
 def require_staff():
 
@@ -46,7 +50,7 @@ def require_staff():
 
     # Checking that the requested endpoint requires authentication.
     if request.endpoint in protected:
-        
+
         # Retrieve the token from the Authorization header.
         token = request.headers.get("Authorization")
 
@@ -105,14 +109,12 @@ def add_event():
 
     # Creating a protobuf request containing the event information.
     event_request = event_pb2.CreateEventRequest(
-        name=body["name"],
-        capacity=body["capacity"]
+        name=body["name"], capacity=body["capacity"]
     )
 
     event = events.CreateEvent(event_request)
 
     return jsonify(fields(event)), 201
-
 
 
 @app.patch("/api/v1/events/<int:event_id>")
@@ -151,9 +153,7 @@ def edit_event(event_id):
             abort(400, "Capacity is too large")
 
     # Creating a protobuf request containing the event ID.
-    event_request = event_pb2.UpdateEventRequest(
-        event_id=event_id
-    )
+    event_request = event_pb2.UpdateEventRequest(event_id=event_id)
 
     # Including the name only if it was provided.
     if "name" in body:
@@ -170,7 +170,6 @@ def edit_event(event_id):
     return jsonify(fields(event)), 200
 
 
-
 @app.delete("/api/v1/events/<int:event_id>")
 def delete_event(event_id):
     # Creating a protobuf request containing the event ID.
@@ -184,21 +183,32 @@ def delete_event(event_id):
 
 @app.post("/api/v1/participants")
 def add_participant():
-    body = request.get_json(silent = True)
+    body = request.get_json(silent=True)
     if not isinstance(body, dict) or not isinstance(body.get("name"), str):
         abort(400, "Request body must be JSON with a string 'name'")
-    participant = registrations.CreateParticipant(registration_pb2.CreateParticipantRequest(name = body["name"]))
+    participant = registrations.CreateParticipant(
+        registration_pb2.CreateParticipantRequest(name=body["name"])
+    )
     return jsonify(fields(participant)), 201
 
 
 @app.get("/api/v1/participants/<int:participant_id>")
 def get_participant(participant_id):
-    return jsonify(fields (registrations.GetParticipant (registration_pb2.ParticipantId (participant_id = participant_id))))
+    return jsonify(
+        fields(
+            registrations.GetParticipant(
+                registration_pb2.ParticipantId(participant_id=participant_id)
+            )
+        )
+    )
 
 
 @app.get("/api/v1/events/<int:event_id>/registrations")
 def list_bookings(event_id):
-    abort(501, "TODO task 4: implement GET /api/v1/events/<event_id>/registrations")
+    booking_request = registration_pb2.ListBookingsRequest(event_id=event_id)
+    response = registrations.ListBookings(booking_request)
+    booking_list = [fields(booking) for booking in response.bookings]
+    return jsonify(booking_list), 200
 
 
 @app.post("/api/v1/registrations")

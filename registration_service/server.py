@@ -10,6 +10,7 @@ import registration_pb2_grpc as rpc
 
 CONFIG = json.load(open("config.json"))
 
+
 def read(sql, args=()):
     with mysql.connector.connect(**CONFIG["db"]) as db, db.cursor(
         dictionary=True
@@ -17,17 +18,20 @@ def read(sql, args=()):
         cursor.execute(sql, args)
         return cursor.fetchall()
 
+
 def write(sql, args=()):
     with mysql.connector.connect(**CONFIG["db"]) as db, db.cursor() as cursor:
         cursor.execute(sql, args)
         db.commit()
         return cursor.lastrowid
 
+
 def call(method, request, context):
     try:
         return method(request)
     except grpc.RpcError as error:
         context.abort(error.code(), error.details())
+
 
 class RegistrationService(rpc.RegistrationServiceServicer):
     def __init__(self, events):
@@ -107,12 +111,26 @@ class RegistrationService(rpc.RegistrationServiceServicer):
             )
             context.abort(grpc.StatusCode.INTERNAL, "Could not save booking")
         found = read(
-                """SELECT b.booking_id, b.event_id, b.participant_id, p.name AS participant_name FROM bookings b
+            """SELECT b.booking_id, b.event_id, b.participant_id, p.name AS participant_name FROM bookings b
                JOIN participants p ON b.participant_id = p.participant_id WHERE b.booking_id = %s""",
-                (booking_id,),
-            )
-
+            (booking_id,),
+        )
         return pb.Booking(**found[0])
+
+    # Task 4 implementation server side, List bookings for event
+    def ListBookings(self, request, context):
+        found = read(
+            """SELECT b.booking_id, b.event_id, b.participant_id,
+                      p.name AS participant_name
+               FROM bookings b
+               JOIN participants p
+                 ON b.participant_id = p.participant_id
+               WHERE b.event_id = %s AND b.state = 'confirmed'
+               ORDER BY b.booking_id""",
+            (request.event_id,),
+        )
+        return pb.ListBookingsResponse(bookings=[pb.Booking(**row) for row in found])
+
 
 events = event_pb2_grpc.EventServiceStub(grpc.insecure_channel(CONFIG["event_service"]))
 server = grpc.server(futures.ThreadPoolExecutor(max_workers=8))
