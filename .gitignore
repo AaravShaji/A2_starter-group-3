@@ -1,5 +1,6 @@
 .venv/
 generated/
 __pycache__/
+.vscode/
 *.pyc
 config.json
