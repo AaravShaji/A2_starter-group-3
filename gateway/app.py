@@ -18,6 +18,8 @@ STATUS = {
     grpc.StatusCode.UNIMPLEMENTED: 501,
     grpc.StatusCode.UNAVAILABLE: 503,
 }
+MAX_INT64 = 2**63 - 1
+
 
 app = Flask(__name__)
 events = event_pb2_grpc.EventServiceStub(grpc.insecure_channel(CONFIG["event_service"]))
@@ -213,7 +215,21 @@ def list_bookings(event_id):
 
 @app.post("/api/v1/registrations")
 def book():
-    abort(501, "TODO task 4: implement POST /api/v1/registrations")
+    body = request.get_json(silent=True)
+    if not isinstance(body, dict):
+        abort(400, "Request body must be a valid JSON object")
+    if set(body) != {"event_id", "participant_id"}:
+        abort(400, "Event ID and participant ID are required")
+    for field in ("event_id", "participant_id"):
+        if type(body[field]) is not int:
+            abort(400, f"{field} must be an integer")
+        if body[field] < 1 or body[field] > MAX_INT64:
+            abort(400, f"{field} must be a valid positive ID")
+    booking_request = registration_pb2.CreateBookingRequest(
+        event_id=body["event_id"], participant_id=body["participant_id"]
+    )
+    booking = registrations.CreateBooking(booking_request)
+    return jsonify(fields(booking)), 201
 
 
 @app.delete("/api/v1/registrations/<int:booking_id>")
