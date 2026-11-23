@@ -82,7 +82,7 @@ class RegistrationService(rpc.RegistrationServiceServicer):
         existing = read(
             """SELECT booking_id FROM bookings WHERE event_id = %s AND participant_id = %s AND state
                          = 'confirmed'""",
-            (request.event_id, request.partcipant_id),
+            (request.event_id, request.participant_id),
         )
         if existing:
             context.abort(
@@ -106,7 +106,7 @@ class RegistrationService(rpc.RegistrationServiceServicer):
                 context,
             )
             context.abort(grpc.StatusCode.INTERNAL, "Could not save booking")
-            found = read(
+        found = read(
                 """SELECT b.booking_id, b.event_id, b.participant_id, p.name AS participant_name FROM bookings b
                JOIN participants p ON b.participant_id = p.participant_id WHERE b.booking_id = %s""",
                 (booking_id,),
