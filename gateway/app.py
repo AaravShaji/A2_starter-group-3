@@ -74,6 +74,8 @@ def list_events():
 
 @app.get("/api/v1/events/<int:event_id>")
 def get_event(event_id):
+    if event_id < 1 or event_id > MAX_INT64:        # This rejects the eventIDs outside the protobuf's range 
+        abort(400, "Event ID must be a valid positive int64")
     return jsonify(fields(events.GetEvent(event_pb2.EventId(event_id=event_id))))
 
 
