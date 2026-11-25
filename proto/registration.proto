@@ -21,7 +21,7 @@ message ParticipantId { int64 participant_id = 1; }
 message CreateParticipantRequest { string name = 1; }
 message Participant { int64 participant_id = 1; string name = 2; }
 
-// Task 4 messages
+// Task 4 messages, for the new rpc above
 message CreateBookingRequest { int64 event_id = 1; int64 participant_id = 2; }
 message Booking {
   int64  booking_id = 1;
