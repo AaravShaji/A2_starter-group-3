@@ -64,6 +64,23 @@ def require_staff():
             abort(401, "Unauthorized")
 
 
+@app.before_request
+def validate_ids():
+    # First we are going to retrieve the arguments from the URL
+    args = request.view_args
+
+    if args is None:
+        return
+
+    # Then check each ID that is being provided in the URL
+    for field in args:
+        if field in ("event_id", "participant_id", "booking_id"):
+            value = args[field]
+
+            if value < 1 or value > MAX_INT64:
+                abort(400, f"{field} must be a valid positive ID")
+
+
 @app.get("/api/v1/events")
 def list_events():
     name = request.args.get("name", "")
@@ -74,8 +91,6 @@ def list_events():
 
 @app.get("/api/v1/events/<int:event_id>")
 def get_event(event_id):
-    if event_id < 1 or event_id > MAX_INT64:        # This rejects the eventIDs outside the protobuf's range 
-        abort(400, "Event ID must be a valid positive int64")
     return jsonify(fields(events.GetEvent(event_pb2.EventId(event_id=event_id))))
 
 
